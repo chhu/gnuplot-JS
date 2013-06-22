@@ -1,0 +1,13 @@
+--- gnuplot-4.6.3/src/axis.c	2012-11-08 18:13:08.000000000 +0100
++++ gnuplot-4.6.3_mod/src/axis.c	2013-05-11 11:08:08.791587160 +0200
+@@ -467,8 +467,9 @@ copy_or_invent_formatstring(AXIS_INDEX a
+ 	    int precision = (ceil(-log10(fabs(axmax-axmin))));
+ 	    if ((axmin*axmax > 0) && precision > 4)
+ 		sprintf(ticfmt[axis],"%%.%df", (precision>14) ? 14 : precision);
++	     else
++		strcpy(ticfmt[axis], "%g");
+ 	}
+-
+ 	return ticfmt[axis];
+     }
+ 

@@ -1,0 +1,7 @@
+#!/bin/bash
+emconfigure ./configure --without-readline --without-x --disable-h3d-quadtree --disable-wxwidgets
+#emmake make clean
+emmake make
+rm gnuplot.o
+mv src/gnuplot ./gnuplot.o
+em++ -s INVOKE_RUN=0 -O2 -s ASM_JS=1 gnuplot.o -o gnuplot.js --post-js post.js --pre-js pre.js
