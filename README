@@ -1,0 +1,55 @@
+Portable JS Gnuplot
+*******************
+
+This is the result of compiling gnuplot with emscripten, combined with an API so it is usable straight out of the box in your browser. 
+The www directory contains the necessary files and a compiled version of gnuplot 4.6.3. The gnuplot-4.6.3 directory contains everything to 
+build the gnuplot sources with emscripten. 
+
+How to compile gnuplot
+**********************
+
+- Install llvm / emscripten, follow instructions at http://emscripten.org
+- Download the gnuplot-4.6.3.tar.gz sources at http://gnuplot.info and untar.
+- Copy the contents of this repo's gnuplot-4.6.3 into the folder where you unpacked the sources (should be the same name).
+- [optional] adjust src/term.h and remove unneeded terminals to reduce final size
+- [optional] patch src/axis.c with the patch file to fix axis descriptions: cd src;patch <../gnuplot-4.6.3.patch 
+- Run em_make to configure and build, you should have a gnuplot.js in your directory. WAIT at the end! The final step takes long. 
+
+How the API works
+*****************
+
+The gnuplot API (gnuplot_api.js) creates a worker (JS-thread) that loads gnuplot.js and handles all the work. No browser checks are done to check for HTML5 features. 
+The API lets you interact with the worker to "upload" or "download" files. Emscripten uses a mock-up for file I/O, so keep in mind that files are kept in memory as arrays
+and that you need to push / pull any file-content to / from the fake file system within the worker. The API provides some convenience functions for this.
+
+The demo site from the www directory is online at http://gnuplot.respawned.com
+
+A minimal implementation should look like this (untested! see index.html for working version):
+
+<img id="result"/>
+<script src='gnuplot_api.js'></script>
+<script>
+    gnuplot = new Gnuplot('gnuplot.js');
+    //gnuplot.putFile("myData.dat", "1 2 3 4 5 6 7 8 9 0"); // No callback needed here
+    gnuplot.run("my gnuplot script as a string", function(e) {
+	gnuplot.getFile('out.svg', function(e) {
+	    if (!e.content) {
+               alert("Output file out.svg not found!");
+               return;
+           }
+           var img = document.getElementById('result');
+           try {
+				var ab = new Uint8Array(e.content);
+				var blob = new Blob([ab], {"type": "image\/svg+xml"});
+				window.URL = window.URL || window.webkitURL;
+				img.src = window.URL.createObjectURL(blob);
+           } catch (err) { // in case blob / URL missing, fallback to data-uri
+                var rstr = '';
+	            for (var i = 0; i < e.content.length; i++)
+	              rstr += String.fromCharCode(e.content[i]);
+	            img.src = 'data:image\/svg+xml;base64,' + btoa(rstr);
+           }
+       });
+   });
+</script>
+
